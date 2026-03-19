@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import backgroundImg from "../assets/Sign Up _WEB _Background.png";
 import logo from "../assets/Logo_V2.svg";
 
@@ -159,15 +160,15 @@ export default function SignUp() {
             }}
           >
             Already have an account?{" "}
-            <a
-              href="/signin"
+            <Link
+              to="/signin"
               className="font-bold"
               style={{ color: "#053B76" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "#0B96D9")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#053B76")}
             >
               Sign In
-            </a>
+            </Link>
           </p>
         </div>
       </div>
