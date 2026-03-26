@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import backgroundImg from "../assets/Forgot passsword back.png";
-import cadnaIcon from "../assets/cadna.png";
+import backgroundImg from "../assets/Forgot passsword.png";
+import cadnaIcon from "../assets/cadna.svg";
 
 const responsiveStyles = `
   .rp-desktop { display: flex; }
@@ -35,17 +35,39 @@ export default function ResetPassword() {
   return (
     <>
       <style>{responsiveStyles}</style>
-      <div className="rp-desktop relative min-h-screen w-full" style={{ backgroundImage: `url('${backgroundImg}')`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat", backgroundPosition: "left center" }}>
+      <div className="rp-desktop relative min-h-screen w-full" style={{ backgroundImage: `url('${backgroundImg}')`, backgroundSize: "cover", backgroundRepeat: "no-repeat", backgroundPosition: "center center", flexWrap: "nowrap", }}>
         <BackButton onClick={() => navigate(-1)} />
-        <div className="flex flex-col items-center justify-center" style={{ width: "45%" }}>
+        <div
+          className="flex flex-col items-center justify-center"
+          style={{
+            width: "40%",
+            flexShrink: 0,
+          }}
+        >
           <img src={cadnaIcon} alt="Lock" style={{ width: "clamp(160px, 22vw, 320px)", height: "auto", objectFit: "contain" }} />
         </div>
-        <div className="flex flex-col justify-center" style={{ width: "55%", paddingLeft: "7%", paddingRight: "12%" }}>
-          <div className="text-center mb-10">
-            <h2 className="font-bold mb-3" style={{ color: "#053B76", fontFamily: "'Segoe UI', sans-serif", fontSize: "2.3rem", lineHeight: 1.2 }}>Reset Your <span style={{ color: "#0B96D9" }}>P</span>assword</h2>
+        <div
+          className="flex flex-col justify-center"
+          style={{
+            width: "60%",        // ← était 55%
+            flexShrink: 0,
+            paddingLeft: "8%",   // ← augmente pour pousser dans la zone blanche
+            paddingRight: "8%",
+          }}
+        >
+          <div className="text-center mb-10" style={{ marginTop: "-60px" }}>
+            <h2
+              className="font-bold mb-3"
+              style={{
+                color: "#053B76",
+                fontFamily: "'Segoe UI', sans-serif",
+                fontSize: "2.9rem",   // ← était 2.3rem
+                lineHeight: 1.2,
+              }}
+            >Reset Your <span style={{ color: "#0B96D9" }}>P</span>assword</h2>
             <p className="text-sm" style={{ color: "#6B8DB2", fontFamily: "'Segoe UI', sans-serif", fontSize: "1rem" }}>Tap your new password and confirm it</p>
           </div>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 items-center" style={{ width: "100%", maxWidth: "450px", margin: "0 auto" }}>
+           <form onSubmit={handleSubmit} className="flex flex-col gap-8 items-center" style={{ width: "100%", maxWidth: "100%", margin: "0 auto" }}>
             <div className="w-full">
               <label style={{ display: "block", color: "#053B76", fontFamily: "'Segoe UI', sans-serif", fontWeight: "bold", fontSize: "0.95rem", marginBottom: "8px", marginLeft: "4px" }}>New password</label>
               <InputField type="password" name="newPassword" value={form.newPassword} onChange={handleChange} placeholder="Enter your new password" />

@@ -1,53 +1,85 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useExamConfig } from './Examconfigcontext';
 
 const QuestionsContext = createContext(null);
 
-const DEFAULT_QUESTIONS = [
-  { id: 1, text: '', choices: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }], correct: null },
-  { id: 2, text: '', choices: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }], correct: null },
-];
-
-let nextId = DEFAULT_QUESTIONS.length + 1;
+let nextId = 1;
 
 export function QuestionsProvider({ children }) {
-  const [questions, setQuestions] = useState(DEFAULT_QUESTIONS);
+  const { form, setForm } = useExamConfig();
+  const [questions, setQuestions] = useState([]);
 
-  const addQuestion = () => {
-    setQuestions(prev => [
-      ...prev,
-      { id: nextId++, text: '', choices: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }], correct: null }
-    ]);
+  const makeQuestion = () => ({
+    id:      nextId++,
+    text:    '',
+    choices: Array.from({ length: Math.max(1, parseInt(form.choices) || 4) }, () => ({ text: '' })),
+    correct: null,
+  });
+
+  const syncChoicesCount = (updatedQuestions) => {
+    if (updatedQuestions.length === 0) return;
+    const maxChoices = Math.max(...updatedQuestions.map(q => q.choices.length));
+    setForm(f => ({ ...f, choices: String(maxChoices) }));
   };
 
-  const deleteQuestion = (id) => {
-    setQuestions(prev => prev.filter(q => q.id !== id));
-  };
+  const addQuestion = () =>
+    setQuestions(qs => [...qs, makeQuestion()]);
 
-  const changeQuestion = (id, field, value) => {
-    setQuestions(prev => prev.map(q => q.id === id ? { ...q, [field]: value } : q));
-  };
+  const deleteQuestion = (id) =>
+    setQuestions(qs => qs.filter(q => q.id !== id));
 
-  const addChoice = (id) => {
-    setQuestions(prev => prev.map(q =>
-      q.id === id ? { ...q, choices: [...q.choices, { text: '' }] } : q
-    ));
-  };
+  const changeQuestion = (id, field, value) =>
+    setQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q));
 
-  const changeChoice = (id, ci, value) => {
-    setQuestions(prev => prev.map(q => {
-      if (q.id !== id) return q;
-      const choices = [...q.choices];
-      choices[ci] = { text: value };
-      return { ...q, choices };
-    }));
-  };
+  const addChoice = (id) =>
+    setQuestions(qs => {
+      const updated = qs.map(q =>
+        q.id === id ? { ...q, choices: [...q.choices, { text: '' }] } : q
+      );
+      syncChoicesCount(updated);
+      return updated;
+    });
 
-  const setCorrect = (id, ci) => {
-    setQuestions(prev => prev.map(q => q.id === id ? { ...q, correct: ci } : q));
-  };
+  const deleteChoice = (id, choiceIndex) =>
+    setQuestions(qs => {
+      const updated = qs.map(q => {
+        if (q.id !== id) return q;
+        if (q.choices.length <= 2) return q;
+        const newChoices = q.choices.filter((_, i) => i !== choiceIndex);
+        let newCorrect = q.correct;
+        if (q.correct === choiceIndex)    newCorrect = null;
+        else if (q.correct > choiceIndex) newCorrect = q.correct - 1;
+        return { ...q, choices: newChoices, correct: newCorrect };
+      });
+      syncChoicesCount(updated);
+      return updated;
+    });
+
+  const changeChoice = (id, choiceIndex, value) =>
+    setQuestions(qs =>
+      qs.map(q =>
+        q.id === id
+          ? { ...q, choices: q.choices.map((c, i) => i === choiceIndex ? { ...c, text: value } : c) }
+          : q
+      )
+    );
+
+  const setCorrect = (id, choiceIndex) =>
+    setQuestions(qs =>
+      qs.map(q => q.id === id ? { ...q, correct: choiceIndex } : q)
+    );
 
   return (
-    <QuestionsContext.Provider value={{ questions, addQuestion, deleteQuestion, changeQuestion, addChoice, changeChoice, setCorrect }}>
+    <QuestionsContext.Provider value={{
+      questions,
+      addQuestion,
+      deleteQuestion,
+      changeQuestion,
+      addChoice,
+      deleteChoice,
+      changeChoice,
+      setCorrect,
+    }}>
       {children}
     </QuestionsContext.Provider>
   );

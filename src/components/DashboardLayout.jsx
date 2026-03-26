@@ -1,68 +1,217 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import logo from '../assets/Logo.svg';
+import { ExamConfigProvider } from '../context/Examconfigcontext';
+import { QuestionsProvider }  from '../context/QuestionsContext';
+import { UserProvider, useUser } from '../context/UserContext';
 
-export default function DashboardLayout() {
+import {
+  ClipboardList, PenLine, Eye,
+  LayoutGrid, CheckSquare, BarChart3, Menu
+} from 'lucide-react';
+
+const responsiveStyles = `
+  /* ── Desktop ── */
+  .sidebar { width: 260px; transform: translateX(0); transition: transform 0.3s ease, width 0.3s ease; }
+  .main-content { margin-left: 260px; }
+  .mobile-topbar { display: none !important; }
+  .desktop-header { display: flex !important; }
+
+  /* ── iPad (768–1024px) ── */
+  @media (max-width: 1024px) and (min-width: 768px) {
+    .sidebar { width: 80px; }
+    .sidebar .nav-label { display: none; }
+    .sidebar .logo-circle { width: 56px !important; height: 56px !important; margin-bottom: 24px !important; }
+    .sidebar .logo-circle img { width: 40px !important; }
+    .main-content { margin-left: 80px; }
+  }
+
+  /* ── Mobile (<768px) ── */
+  @media (max-width: 767px) {
+    .sidebar {
+      transform: translateX(-100%);
+      position: fixed !important;
+      z-index: 300;
+      width: 260px !important;
+      top: 0; left: 0; height: 100vh;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0 !important; }
+    .mobile-topbar {
+      display: grid !important;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      height: 68px;
+      padding: 0 16px;
+      background: #fff;
+      border-bottom: 1.5px solid #ceedf8;
+      box-shadow: 0 2px 10px rgba(5,59,118,0.07);
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .desktop-header { display: none !important; }
+    .topbar-left  { display: flex; align-items: center; justify-content: flex-start; }
+    .topbar-mid   { display: flex; align-items: center; justify-content: center; }
+    .topbar-right { display: flex; align-items: center; justify-content: flex-end; }
+  }
+`;
+
+function Avatar({ size = 40 }) {
+  const { user, initials } = useUser();
+  if (user.avatar) {
+    return <img src={user.avatar} alt="avatar" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '2px solid #fff', flexShrink: 0 }} />;
+  }
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: 'linear-gradient(135deg, #053B76, #0B96D9)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontWeight: 700, fontSize: size * 0.35,
+      border: '2px solid #fff', flexShrink: 0,
+    }}>{initials}</div>
+  );
+}
+
+function HeaderUser() {
+  const { displayName } = useUser();
+  return (
+    <Link to="/dashboard/profile" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      <span style={{ fontWeight: 700, color: '#053B76', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>{displayName}</span>
+      <Avatar size={40} />
+    </Link>
+  );
+}
+
+function DashboardInner() {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { label: "Create an exam", path: "/dashboard/exam-config" },
-    { label: "Add questions", path: "/dashboard/questions" },
-    { label: "Question preview", path: "/dashboard/preview" },
-    { label: "Grid exam preview", path: "/dashboard/grid-preview" },
-    { label: "Correction sheet", path: "/dashboard/correction" },
+    { label: "Create an exam",    path: "/dashboard/exam-config",  icon: <ClipboardList size={18} /> },
+    { label: "Add questions",     path: "/dashboard/questions",    icon: <PenLine size={18} /> },
+    { label: "Question preview",  path: "/dashboard/preview",      icon: <Eye size={18} /> },
+    { label: "Grid exam preview", path: "/dashboard/grid-preview", icon: <LayoutGrid size={18} /> },
+    { label: "Correction sheet",  path: "/dashboard/correction",   icon: <CheckSquare size={18} /> },
+    { label: "Statistic",         path: "/dashboard/statistics",   icon: <BarChart3 size={18} /> },
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#F0F5FA] font-sans">
-      {/* SIDEBAR */}
-      <aside 
-        className="w-[260px] flex flex-col items-center py-6 fixed h-screen top-0 left-0 shadow-xl"
-        style={{ background: "linear-gradient(180deg, #38B6FF 0%, #0B96D9 100%)", borderRadius: "0 30px 30px 0", zIndex: 100 }}
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F0F5FA', position: 'relative' }}>
+      <style>{responsiveStyles}</style>
+
+      {/* Overlay — only in DOM when sidebar open */}
+      {sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.38)',
+          zIndex: 200, cursor: 'pointer',
+        }} />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <aside
+        className={`sidebar ${sidebarOpen ? 'open' : ''}`}
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '24px 0', position: 'fixed', height: '100vh', top: 0, left: 0,
+          background: 'linear-gradient(180deg, #38B6FF 0%, #0B96D9 100%)',
+          borderRadius: '0 30px 30px 0',
+          boxShadow: '4px 0 24px rgba(5,59,118,0.13)',
+          overflowY: 'auto',
+        }}
       >
-        <div className="bg-white rounded-full p-3 mb-10 w-[140px] h-[140px] flex items-center justify-center shadow-lg">
-          <img src={logo} alt="QuiZor Logo" className="w-[100px] h-auto object-contain" />
+        <div className="logo-circle" style={{
+          background: '#fff', borderRadius: '50%',
+          width: 120, height: 120,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 32, flexShrink: 0,
+          boxShadow: '0 4px 16px rgba(5,59,118,0.12)',
+        }}>
+          <img src={logo} alt="QuiZor" style={{ width: 85, height: 'auto', objectFit: 'contain' }} />
         </div>
-        
-        <nav className="w-full text-white flex flex-col gap-2 px-4">
+
+        <nav style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, padding: '0 12px', flex: 1 }}>
           {navItems.map(item => {
             const isActive = location.pathname.includes(item.path);
             return (
               <Link
                 key={item.label}
                 to={item.path}
-                className={`w-full text-center py-3 rounded-xl font-bold transition-all ${isActive ? "bg-white text-[#0B96D9] shadow-md border-b-4 border-[#0a7dbf]" : "text-white hover:bg-white/10"}`}
-                style={{ fontSize: "1rem" }}
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 10, padding: '11px 10px', borderRadius: 14,
+                  textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
+                  transition: 'all 0.2s',
+                  background: isActive ? '#fff' : 'transparent',
+                  color: isActive ? '#0B96D9' : '#fff',
+                  boxShadow: isActive ? '0 2px 10px rgba(5,59,118,0.12)' : 'none',
+                  borderBottom: isActive ? '3px solid #0a7dbf' : '3px solid transparent',
+                }}
               >
-                {item.label}
+                <span style={{ display: 'flex', flexShrink: 0 }}>{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
               </Link>
             );
           })}
         </nav>
-
-        <div className="mt-auto w-full px-4 mb-4">
-          <button className="w-full flex items-center justify-center gap-2 bg-white text-[#053B76] py-3 rounded-xl font-bold shadow-md cursor-pointer hover:bg-gray-100 transition-colors">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-            Statistic
-          </button>
-        </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col ml-[260px]">
-        {/* HEADER */}
-        <header className="h-[90px] w-full flex items-center justify-end px-10">
-          <Link to="/dashboard/profile" className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity" style={{ textDecoration: "none" }}>
-            <span className="font-bold text-[#053B76] text-lg mt-1">Mohamed Amine</span>
-            <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-[50px] h-[50px] rounded-full object-cover border-2 border-white shadow-md relative top-[-4px]" />
-          </Link>
+      {/* ── MAIN ── */}
+      <main className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+        {/* Mobile topbar — hidden by CSS on desktop, shown on mobile */}
+        <div className="mobile-topbar">
+          {/* Left: hamburger */}
+          <div className="topbar-left">
+            <button
+              onClick={() => setSidebarOpen(s => !s)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#053B76', display: 'flex', alignItems: 'center',
+                padding: 6, borderRadius: 8,
+              }}
+            >
+              <Menu size={26} />
+            </button>
+          </div>
+
+          {/* Center: logo */}
+          <div className="topbar-mid">
+            <img src={logo} alt="QuiZor" style={{ height: 38, objectFit: 'contain' }} />
+          </div>
+
+          {/* Right: name + avatar */}
+          <div className="topbar-right">
+            <HeaderUser />
+          </div>
+        </div>
+
+        {/* Desktop header */}
+        <header className="desktop-header" style={{
+          height: 80, alignItems: 'center',
+          justifyContent: 'flex-end', padding: '0 40px', flexShrink: 0,
+        }}>
+          <HeaderUser />
         </header>
-        
-        {/* PAGE CONTENT */}
-        <div className="flex-1 p-8 pt-0 flex overflow-y-auto">
-          <Outlet />
+
+        {/* Page content */}
+        <div style={{ flex: 1, padding: '0 32px 32px', display: 'flex', overflow: 'auto' }}>
+          <ExamConfigProvider>
+            <QuestionsProvider>
+              <Outlet />
+            </QuestionsProvider>
+          </ExamConfigProvider>
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <UserProvider>
+      <DashboardInner />
+    </UserProvider>
   );
 }

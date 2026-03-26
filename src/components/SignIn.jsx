@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import backgroundImg from "../assets/Sign In _WEB.png";
+import { Link, useNavigate } from "react-router-dom";
+import backgroundImg from "../assets/Sign In _WEB.svg";
 import logo from "../assets/Logo_V2.svg";
 
 const responsiveStyles = `
@@ -21,7 +21,7 @@ export default function SignIn() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
+  const navigate = useNavigate();
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -29,6 +29,7 @@ export default function SignIn() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Sign in submitted:", form, "Remember:", rememberMe);
+    navigate("/dashboard/exam-config"); 
   };
 
   return (
@@ -42,7 +43,7 @@ export default function SignIn() {
         className="signin-desktop min-h-screen w-full"
         style={{
           backgroundImage: `url('${backgroundImg}')`,
-          backgroundSize: "100% 100%",
+          backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
         }}
@@ -51,9 +52,9 @@ export default function SignIn() {
         <div
           className="flex flex-col justify-center"
           style={{
-            width: "55%",
-            paddingLeft: "10%",
-            paddingRight: "10%",
+            width: "58%",
+            paddingLeft: "5%",
+            paddingRight: "5%",
           }}
         >
           {/* Title */}
@@ -152,8 +153,8 @@ export default function SignIn() {
                   borderRadius: "16px",
                   boxShadow: "0 4px 18px rgba(114, 207, 249, 0.25)",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(114, 207, 249, 0.5)"; e.currentTarget.style.background="#f4faff"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(114, 207, 249, 0.25)"; e.currentTarget.style.background="#FFFFFF"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(114, 207, 249, 0.5)"; e.currentTarget.style.background = "#f4faff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(114, 207, 249, 0.25)"; e.currentTarget.style.background = "#FFFFFF"; }}
               >
                 Sign In
               </button>
@@ -186,17 +187,30 @@ export default function SignIn() {
         {/* ── RIGHT — blue zone: logo centered ── */}
         <div
           className="flex flex-col items-center justify-center border-0"
-          style={{ width: "45%" }}
+          style={{
+            width: "42%",
+            paddingRight: "10%",   /* nudges content into the blue stripe */
+            paddingLeft: "20%",     /* keeps it visually centered inside the blue area */
+          }}
         >
           {/* Logo circle */}
           <div
             className="rounded-full bg-white flex items-center justify-center shadow-xl border-0"
-            style={{ width: "clamp(150px, 24vw, 360px)", height: "clamp(150px, 24vw, 360px)" }}
+            style={{
+              width: "clamp(200px, 26vw, 420px)",
+              height: "clamp(200px, 26vw, 420px)",
+              marginLeft: "auto",
+              marginLeft: "10%",  /* keeps it visually centered inside the blue area */
+            }}
           >
             <img
               src={logo}
               alt="QuiZor Logo"
-              className="object-contain" style={{ width: "clamp(105px, 17vw, 250px)", height: "clamp(105px, 17vw, 250px)" }}
+              className="object-contain"
+              style={{
+                width: "clamp(115px, 18vw, 230px)",
+                height: "clamp(115px, 18vw, 230px)",
+              }}
             />
           </div>
         </div>
@@ -237,7 +251,7 @@ export default function SignIn() {
             <img
               src={logo}
               alt="QuiZor Logo"
-              style={{ width: 130, height: 130, objectFit: "contain" }}
+              style={{ width: 148, height: 148, objectFit: "contain" }}
             />
           </div>
         </div>
@@ -345,8 +359,8 @@ export default function SignIn() {
                   cursor: "pointer",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(114,207,249,0.5)"; e.currentTarget.style.background="#f4faff"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(114,207,249,0.25)"; e.currentTarget.style.background="#FFFFFF"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(114,207,249,0.5)"; e.currentTarget.style.background = "#f4faff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(114,207,249,0.25)"; e.currentTarget.style.background = "#FFFFFF"; }}
               >
                 Sign In
               </button>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import backgroundImg from "../assets/Sign Up _WEB _Background.png";
+import { useNavigate } from "react-router-dom";
+import backgroundImg from "../assets/Sign Up _WEB.png";
 import logo from "../assets/Logo_V2.svg";
 
 const responsiveStyles = `
@@ -22,6 +23,7 @@ export default function SignUp() {
     email: "",
     password: "",
   });
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -30,7 +32,7 @@ export default function SignUp() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign up submitted:", form);
+    navigate("/dashboard/exam-config");
   };
 
   return (
@@ -45,7 +47,7 @@ export default function SignUp() {
         style={{
           backgroundImage: `url(${backgroundImg})`,
           backgroundSize: "100% 100%",
-          
+
           backgroundRepeat: "no-repeat",
           backgroundPosition: "left center",
         }}
@@ -106,10 +108,10 @@ export default function SignUp() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-            <InputField type="text"  name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" />
-            <InputField type="text"  name="lastName"  value={form.lastName}  onChange={handleChange} placeholder="Last Name" />
-            <InputField type="text"  name="userName"  value={form.userName}  onChange={handleChange} placeholder="UserName" />
-            <InputField type="email" name="email"     value={form.email}     onChange={handleChange} placeholder="Email" />
+            <InputField type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" />
+            <InputField type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" />
+            <InputField type="text" name="userName" value={form.userName} onChange={handleChange} placeholder="UserName" />
+            <InputField type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email" />
 
             {/* Password + eye toggle */}
             <div className="relative">
@@ -251,10 +253,10 @@ export default function SignUp() {
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: 16 }}
           >
-            <InputField type="text"  name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" mobile />
-            <InputField type="text"  name="lastName"  value={form.lastName}  onChange={handleChange} placeholder="Last Name"  mobile />
-            <InputField type="text"  name="userName"  value={form.userName}  onChange={handleChange} placeholder="UserName"   mobile />
-            <InputField type="email" name="email"     value={form.email}     onChange={handleChange} placeholder="Email"      mobile />
+            <InputField type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" mobile />
+            <InputField type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" mobile />
+            <InputField type="text" name="userName" value={form.userName} onChange={handleChange} placeholder="UserName" mobile />
+            <InputField type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email" mobile />
 
             {/* Password + eye toggle */}
             <div style={{ position: "relative" }}>
