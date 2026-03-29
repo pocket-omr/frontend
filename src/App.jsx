@@ -1,19 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QuestionsProvider } from './context/QuestionsContext';
 import { ExamConfigProvider } from './context/Examconfigcontext';  // ← add this
-import SignUp from './components/SignUp';
-import SignIn from './components/SignIn';
-import ForgotPassword from './components/ForgotPassword';
-import VerifyCode from './components/VerifyCode';
-import ResetPassword from './components/ResetPassword';
-import DashboardLayout from './components/DashboardLayout';
-import Profile from './components/Profile';
-import ExamConfig from './components/ExamConfig';
-import QuestionsCreation from './components/QuestionsCreation';
-import QuestionSheet from './components/QuestionSheet';
-import GridSheet from './components/GridSheet';
-import CorrectionSheet from './components/CorrectionSheet';
-import ExamList from './components/ExamList';
+import SignUp from './pages/SignUp';
+import SignIn from './pages/SignIn';
+import ForgotPassword from './pages/ForgotPassword';
+import VerifyCode from './pages/VerifyCode';
+import ResetPassword from './pages/ResetPassword';
+import DashboardLayout from './pages/DashboardLayout';
+import Profile from './pages/Profile';
+import ExamConfig from './pages/ExamConfig';
+import QuestionsCreation from './pages/QuestionsCreation';
+import QuestionSheet from './pages/QuestionSheet';
+import GridSheet from './pages/GridSheet';
+import CorrectionSheet from './pages/CorrectionSheet';
+import ExamList from './pages/ExamList';
 
 function App() {
   return (
