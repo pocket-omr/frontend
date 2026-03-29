@@ -53,6 +53,8 @@ const responsiveStyles = `
     .cs-step-circle { width: 30px !important; height: 30px !important; font-size: 0.75rem !important; }
   }
   @media print {
+    body > * { display: none !important; }
+    body > #cs-print-root { display: block !important; }
     .screen-only { display: none !important; }
     .print-only  { display: block !important; }
     .print-sheet { page-break-after: always; break-after: page; width: 100%; padding: 16px; box-sizing: border-box; }
@@ -472,11 +474,23 @@ export default function CorrectionSheet() {
   const totalCorrectionPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
 
   function handlePrint() {
+    const el = document.getElementById('cs-print-root');
+    const placeholder = document.createElement('div');
+    placeholder.id = 'cs-print-placeholder';
+
+    if (el) {
+      el.parentNode.insertBefore(placeholder, el);
+      document.body.appendChild(el);
+    }
+
     const afterPrint = () => {
       window.removeEventListener('afterprint', afterPrint);
-      // force React to re-render and restore the UI
-      navigate('/dashboard/correction', { replace: true });
+      if (el && placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(el, placeholder);
+        placeholder.remove();
+      }
     };
+
     window.addEventListener('afterprint', afterPrint);
     window.print();
   }
