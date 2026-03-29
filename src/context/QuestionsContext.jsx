@@ -1,84 +1,94 @@
 import React, { createContext, useContext, useState } from 'react';
-import { useExamConfig } from './Examconfigcontext';
 
-const QuestionsContext = createContext(null);
+const QuestionsContext = createContext();
 
-let nextId = 1;
+function makeQuestion(overrides = {}) {
+  return {
+    id: Date.now() + Math.random(),
+    text: '',
+    choices: [
+      { text: '' },
+      { text: '' },
+      { text: '' },
+      { text: '' },
+    ],
+    correct: null,
+    ...overrides,
+  };
+}
 
 export function QuestionsProvider({ children }) {
-  const { form, setForm } = useExamConfig();
   const [questions, setQuestions] = useState([]);
 
-  const makeQuestion = () => ({
-    id:      nextId++,
-    text:    '',
-    choices: Array.from({ length: Math.max(1, parseInt(form.choices) || 4) }, () => ({ text: '' })),
-    correct: null,
-  });
+  function addQuestion() {
+    setQuestions(prev => [...prev, makeQuestion()]);
+  }
 
-  const syncChoicesCount = (updatedQuestions) => {
-    if (updatedQuestions.length === 0) return;
-    const maxChoices = Math.max(...updatedQuestions.map(q => q.choices.length));
-    setForm(f => ({ ...f, choices: String(maxChoices) }));
-  };
+  function deleteQuestion(id) {
+    setQuestions(prev => prev.filter(q => q.id !== id));
+  }
 
-  const addQuestion = () =>
-    setQuestions(qs => [...qs, makeQuestion()]);
+  function changeQuestion(id, field, value) {
+    setQuestions(prev =>
+      prev.map(q => q.id === id ? { ...q, [field]: value } : q)
+    );
+  }
 
-  const deleteQuestion = (id) =>
-    setQuestions(qs => qs.filter(q => q.id !== id));
-
-  const changeQuestion = (id, field, value) =>
-    setQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q));
-
-  const addChoice = (id) =>
-    setQuestions(qs => {
-      const updated = qs.map(q =>
+  function addChoice(id) {
+    setQuestions(prev =>
+      prev.map(q =>
         q.id === id ? { ...q, choices: [...q.choices, { text: '' }] } : q
-      );
-      syncChoicesCount(updated);
-      return updated;
-    });
+      )
+    );
+  }
 
-  const deleteChoice = (id, choiceIndex) =>
-    setQuestions(qs => {
-      const updated = qs.map(q => {
-        if (q.id !== id) return q;
-        if (q.choices.length <= 2) return q;
-        const newChoices = q.choices.filter((_, i) => i !== choiceIndex);
-        let newCorrect = q.correct;
-        if (q.correct === choiceIndex)    newCorrect = null;
-        else if (q.correct > choiceIndex) newCorrect = q.correct - 1;
-        return { ...q, choices: newChoices, correct: newCorrect };
-      });
-      syncChoicesCount(updated);
-      return updated;
-    });
-
-  const changeChoice = (id, choiceIndex, value) =>
-    setQuestions(qs =>
-      qs.map(q =>
+  function changeChoice(id, index, value) {
+    setQuestions(prev =>
+      prev.map(q =>
         q.id === id
-          ? { ...q, choices: q.choices.map((c, i) => i === choiceIndex ? { ...c, text: value } : c) }
+          ? { ...q, choices: q.choices.map((c, i) => i === index ? { ...c, text: value } : c) }
           : q
       )
     );
+  }
 
-  const setCorrect = (id, choiceIndex) =>
-    setQuestions(qs =>
-      qs.map(q => q.id === id ? { ...q, correct: choiceIndex } : q)
+  function setCorrect(id, index) {
+    setQuestions(prev =>
+      prev.map(q =>
+        q.id === id ? { ...q, correct: q.correct === index ? null : index } : q
+      )
     );
+  }
+
+  function deleteChoice(id, index) {
+    setQuestions(prev =>
+      prev.map(q => {
+        if (q.id !== id) return q;
+        const newChoices = q.choices.filter((_, i) => i !== index);
+        return {
+          ...q,
+          choices: newChoices,
+          correct: q.correct === index ? null : q.correct > index ? q.correct - 1 : q.correct,
+        };
+      })
+    );
+  }
+
+  // Load questions for editing
+  function loadQuestions(qs) {
+    setQuestions(qs.map(q => ({ ...q, id: q.id ?? Date.now() + Math.random() })));
+  }
+
+  // Reset to empty
+  function resetQuestions() {
+    setQuestions([]);
+  }
 
   return (
     <QuestionsContext.Provider value={{
-      questions,
-      addQuestion,
-      deleteQuestion,
-      changeQuestion,
-      addChoice,
-      deleteChoice,
-      changeChoice,
-      setCorrect,
+      questions, addQuestion, deleteQuestion, changeQuestion,
+      addChoice, changeChoice, setCorrect, deleteChoice,
+      loadQuestions, resetQuestions,
     }}>
       {children}
     </QuestionsContext.Provider>

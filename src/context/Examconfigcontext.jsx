@@ -1,40 +1,49 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const ExamConfigContext = createContext(null);
+const ExamConfigContext = createContext();
+
+const defaultForm = {
+  title: '',
+  module: '',
+  university: '',
+  department: '',
+  date: '',
+  duration: '',
+  numQuestions: '',
+  choices: '4',
+  questionsPerPage: '20',
+  instructions: '',
+};
 
 export function ExamConfigProvider({ children }) {
+  const [form, setForm] = useState({ ...defaultForm });
   const [checkboxType, setCheckboxType] = useState('Fill');
-  const [gridLayout, setGridLayout]     = useState('Linear');
-  const [form, setForm] = useState({
-    title:            'Second exam of POO',
-    module:           'POO',
-    university:       'ESI',
-    department:       '2CP',
-    date:             '2025-05-25',
-    duration:         '2h:30min',
-    numQuestions:     '20',
-    choices:          '4',
-    questionsPerPage: '20',
-    instructions:     '"Fill the corresponding box completely for your answer."',
-  });
+  const [gridLayout, setGridLayout] = useState('Linear');
 
-  const instructionDefaults = {
-    Fill:   '"Fill the corresponding box completely for your answer."',
-    Bubbel: '"Make bubble in the corresponding box for your answer."',
-    Cross:  '"Draw a cross (✗) in the corresponding box for your answer."',
-    Tick:   '"Draw a tick (✓) in the corresponding box for your answer."',
-  };
-
-  const handleCheckboxType = (type) => {
+  function handleCheckboxType(type) {
     setCheckboxType(type);
-    setForm(f => ({ ...f, instructions: instructionDefaults[type] }));
-  };
-  
+  }
+
+  // Load exam data for editing
+  function loadExamConfig(examForm, examCheckboxType, examGridLayout) {
+    setForm({ ...defaultForm, ...examForm });
+    setCheckboxType(examCheckboxType || 'Fill');
+    setGridLayout(examGridLayout || 'Linear');
+  }
+
+  // Reset to blank
+  function resetForm() {
+    setForm({ ...defaultForm });
+    setCheckboxType('Fill');
+    setGridLayout('Linear');
+  }
+
   return (
     <ExamConfigContext.Provider value={{
       form, setForm,
       checkboxType, handleCheckboxType,
       gridLayout, setGridLayout,
+      loadExamConfig, resetForm,
     }}>
       {children}
     </ExamConfigContext.Provider>

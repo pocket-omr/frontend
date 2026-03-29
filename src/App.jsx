@@ -13,6 +13,7 @@ import QuestionsCreation from './components/QuestionsCreation';
 import QuestionSheet from './components/QuestionSheet';
 import GridSheet from './components/GridSheet';
 import CorrectionSheet from './components/CorrectionSheet';
+import ExamList from './components/ExamList';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="preview" element={<QuestionSheet />} />
               <Route path="grid-preview" element={<GridSheet />} />
               <Route path="correction" element={<CorrectionSheet />} />
+              <Route path="exam-list" element={<ExamList />} />
             </Route>
           </Routes>
         </BrowserRouter>
