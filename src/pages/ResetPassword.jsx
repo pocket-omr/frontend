@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import backgroundImg from "../assets/Forgot passsword.png";
-import cadnaIcon from "../assets/cadna.svg";
+import cadnaIcon from "../assets/cadna.png";
 
 const responsiveStyles = `
   .rp-desktop { display: flex; }
@@ -87,7 +87,7 @@ export default function ResetPassword() {
       {/* MOBILE */}
       <div className="rp-mobile flex-col min-h-screen w-full relative" style={{ background: "linear-gradient(170deg, #053B76 0%, #0B96D9 55%, #ceedf8 100%)" }}>
         <BackButton onClick={() => navigate(-1)} />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyCenter: "center", paddingTop: "12vh", paddingBottom: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: "12vh", paddingBottom: 32 }}>
           <img src={cadnaIcon} alt="Lock" style={{ width: "160px", height: "auto" }} />
         </div>
         <div style={{ flex: 1, background: "rgba(255,255,255,0.98)", borderRadius: "40px 40px 0 0", padding: "40px 24px 44px", display: "flex", flexDirection: "column" }}>
