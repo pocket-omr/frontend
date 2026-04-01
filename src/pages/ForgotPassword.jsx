@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import backgroundImg from "../assets/Forgot passsword.png";
-import cadnaIcon from "../assets/cadna.svg";
+import cadnaIcon from "../assets/cadna.png";
 
 const responsiveStyles = `
   /* ── MOBILE  < 860px ── */
