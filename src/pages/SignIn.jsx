@@ -199,7 +199,6 @@ export default function SignIn() {
             style={{
               width: "clamp(200px, 26vw, 420px)",
               height: "clamp(200px, 26vw, 420px)",
-              marginLeft: "auto",
               marginLeft: "10%",  /* keeps it visually centered inside the blue area */
             }}
           >
