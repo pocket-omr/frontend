@@ -1,6 +1,6 @@
 <svg width="1512" height="982" viewBox="0 0 1512 982" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_295_49)">
-<rect width="1512" height="982" rx="35" fill="white"/>
+<rect width="1512" height="982" fill="white"/>
 <g opacity="0.6" filter="url(#filter0_f_295_49)">
 <ellipse cx="657" cy="1029" rx="268" ry="166" fill="#E2E7E9"/>
 </g>
@@ -74,7 +74,7 @@
 <feGaussianBlur stdDeviation="66" result="effect1_foregroundBlur_295_49"/>
 </filter>
 <clipPath id="clip0_295_49">
-<rect width="1512" height="982" rx="35" fill="white"/>
+<rect width="1512" height="982" fill="white"/>
 </clipPath>
 </defs>
 </svg>
