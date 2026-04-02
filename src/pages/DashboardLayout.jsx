@@ -5,6 +5,7 @@ import { ExamConfigProvider } from '../context/Examconfigcontext';
 import { QuestionsProvider } from '../context/QuestionsContext';
 import { ExamListProvider } from '../context/ExamListContext';
 import { UserProvider, useUser } from '../context/UserContext';
+import { apiFetch } from '../api';
 
 import {
   ClipboardList, PenLine, Eye,
@@ -49,33 +50,32 @@ const responsiveStyles = `
 
   .nav-divider { height: 1px; background: rgba(255,255,255,0.2); margin: 6px 0; border-radius: 1px; }
 
- .logout-btn {
-  background: rgba(255,255,255,0.12) !important;
-  box-shadow: none;
-  transition: all 0.25s ease !important;
-}
-.logout-btn:hover, .logout-btn:focus {
-  background: rgba(255,255,255,0.25) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 18px rgba(5, 59, 118, 0.35) !important;
-  outline: none;
-  transform: translateY(-1px);
-}
-.logout-btn:active {
-  background: rgba(255,255,255,0.35) !important;
-  transform: translateY(0px);
-  box-shadow: 0 2px 8px rgba(5, 59, 118, 0.20) !important;
-}
+  .logout-btn {
+    background: rgba(255,255,255,0.12) !important;
+    box-shadow: none;
+    transition: all 0.25s ease !important;
+  }
+  .logout-btn:hover, .logout-btn:focus {
+    background: rgba(255,255,255,0.25) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 18px rgba(5, 59, 118, 0.35) !important;
+    outline: none;
+    transform: translateY(-1px);
+  }
+  .logout-btn:active {
+    background: rgba(255,255,255,0.35) !important;
+    transform: translateY(0px);
+    box-shadow: 0 2px 8px rgba(5, 59, 118, 0.20) !important;
+  }
 `;
 
 const examSubItems = [
-  { label: "Create an exam", path: "/dashboard/exam-config", icon: <ClipboardList size={16} /> },
-  { label: "Add questions", path: "/dashboard/questions", icon: <PenLine size={16} /> },
-  { label: "Question sheet", path: "/dashboard/preview", icon: <Eye size={16} /> },
-  { label: "Grid sheet", path: "/dashboard/grid-preview", icon: <LayoutGrid size={16} /> },
-  { label: "Correction sheet", path: "/dashboard/correction", icon: <CheckSquare size={16} /> },
+  { label: "Create an exam",   path: "/dashboard/exam-config",  icon: <ClipboardList size={16} /> },
+  { label: "Add questions",    path: "/dashboard/questions",    icon: <PenLine size={16} /> },
+  { label: "Question sheet",   path: "/dashboard/preview",      icon: <Eye size={16} /> },
+  { label: "Grid sheet",       path: "/dashboard/grid-preview", icon: <LayoutGrid size={16} /> },
+  { label: "Correction sheet", path: "/dashboard/correction",   icon: <CheckSquare size={16} /> },
 ];
-
 
 function ExamSelectorNavItem({ location, onNavigate }) {
   const [open, setOpen] = useState(false);
@@ -84,7 +84,7 @@ function ExamSelectorNavItem({ location, onNavigate }) {
   const activeSub = examSubItems.find(i => location.pathname.includes(i.path));
   const isAnyActive = Boolean(activeSub);
   const displayLabel = activeSub ? activeSub.label : "Create an exam";
-  const displayIcon = activeSub ? activeSub.icon : <ClipboardList size={18} />;
+  const displayIcon  = activeSub ? activeSub.icon  : <ClipboardList size={18} />;
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -94,31 +94,10 @@ function ExamSelectorNavItem({ location, onNavigate }) {
 
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 10, padding: '11px 10px', borderRadius: 14,
-          border: 'none', fontFamily: 'inherit',
-          cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem',
-          transition: 'all 0.2s',
-          background: isAnyActive ? '#fff' : 'transparent',
-          color: isAnyActive ? '#0B96D9' : '#fff',
-          boxShadow: isAnyActive ? '0 2px 10px rgba(5,59,118,0.12)' : 'none',
-          borderBottom: isAnyActive ? '3px solid #0a7dbf' : '3px solid transparent',
-        }}
-      >
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '11px 10px', borderRadius: 14, border: 'none', fontFamily: 'inherit', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s', background: isAnyActive ? '#fff' : 'transparent', color: isAnyActive ? '#0B96D9' : '#fff', boxShadow: isAnyActive ? '0 2px 10px rgba(5,59,118,0.12)' : 'none', borderBottom: isAnyActive ? '3px solid #0a7dbf' : '3px solid transparent' }}>
         <span style={{ display: 'flex', flexShrink: 0 }}>{displayIcon}</span>
         <span className="nav-label" style={{ flex: 1, textAlign: 'center' }}>{displayLabel}</span>
-        <ChevronDown
-          size={14}
-          className="exam-selector-chevron"
-          style={{
-            color: isAnyActive ? '#0B96D9' : 'rgba(255,255,255,0.75)',
-            transform: open ? 'rotate(180deg)' : 'rotate(0)',
-            transition: 'transform 0.2s', flexShrink: 0,
-          }}
-        />
+        <ChevronDown size={14} className="exam-selector-chevron" style={{ color: isAnyActive ? '#0B96D9' : 'rgba(255,255,255,0.75)', transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', flexShrink: 0 }} />
       </button>
 
       {open && (
@@ -126,12 +105,7 @@ function ExamSelectorNavItem({ location, onNavigate }) {
           {examSubItems.map(item => {
             const isActive = location.pathname.includes(item.path);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`exam-dropdown-item${isActive ? ' active' : ''}`}
-                onClick={() => { setOpen(false); onNavigate(); }}
-              >
+              <Link key={item.path} to={item.path} className={`exam-dropdown-item${isActive ? ' active' : ''}`} onClick={() => { setOpen(false); onNavigate(); }}>
                 <div className="opt-icon">{item.icon}</div>
                 {item.label}
               </Link>
@@ -149,13 +123,9 @@ function Avatar({ size = 40 }) {
     return <img src={user.avatar} alt="avatar" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '2px solid #fff', flexShrink: 0 }} />;
   }
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg, #053B76, #0B96D9)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontWeight: 700, fontSize: size * 0.35,
-      border: '2px solid #fff', flexShrink: 0,
-    }}>{initials}</div>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg, #053B76, #0B96D9)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: size * 0.35, border: '2px solid #fff', flexShrink: 0 }}>
+      {initials}
+    </div>
   );
 }
 
@@ -171,18 +141,32 @@ function HeaderUser() {
 
 function DashboardInner() {
   const location = useLocation();
-  const navigate = useNavigate();   
+  const navigate  = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // ── Protect route ──
+  useEffect(() => {
+    if (!localStorage.getItem('access_token')) {
+      navigate('/signin', { replace: true });
+    }
+  }, []);
+
   const otherNavItems = [
-    { label: "Exam List", path: "/dashboard/exam-list", icon: <BookOpen size={18} /> },
-    { label: "Statistic", path: "/dashboard/statistics", icon: <BarChart3 size={18} /> },
+    { label: "Exam List",  path: "/dashboard/exam-list",   icon: <BookOpen size={18} /> },
+    { label: "Statistic",  path: "/dashboard/statistics",  icon: <BarChart3 size={18} /> },
   ];
 
-  function handleLogout() {
+  async function handleLogout() {
     setSidebarOpen(false);
-    // TODO: clear tokens/session here if needed
-    navigate('/signin');                    // ← navigates to sign in
+    try {
+      await apiFetch('/api/v1/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+      });
+    } catch (_) {}
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/signin');
   }
 
   return (
@@ -194,95 +178,37 @@ function DashboardInner() {
       )}
 
       {/* SIDEBAR */}
-      <aside
-        className={`sidebar ${sidebarOpen ? 'open' : ''}`}
-        style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          padding: '24px 0', position: 'fixed', height: '100vh', top: 0, left: 0,
-          background: 'linear-gradient(180deg, #38B6FF 0%, #0B96D9 100%)',
-          borderRadius: '0 30px 30px 0',
-          boxShadow: '4px 0 24px rgba(5,59,118,0.13)',
-          overflowY: 'auto',
-        }}
-      >
-        {/* Logo */}
-        <div className="logo-circle" style={{
-          background: '#fff', borderRadius: '50%',
-          width: 120, height: 120,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 32, flexShrink: 0,
-          boxShadow: '0 4px 16px rgba(5,59,118,0.12)',
-        }}>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', position: 'fixed', height: '100vh', top: 0, left: 0, background: 'linear-gradient(180deg, #38B6FF 0%, #0B96D9 100%)', borderRadius: '0 30px 30px 0', boxShadow: '4px 0 24px rgba(5,59,118,0.13)', overflowY: 'auto' }}>
+        <div className="logo-circle" style={{ background: '#fff', borderRadius: '50%', width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32, flexShrink: 0, boxShadow: '0 4px 16px rgba(5,59,118,0.12)' }}>
           <img src={logo} alt="QuiZor" style={{ width: 85, height: 'auto', objectFit: 'contain' }} />
         </div>
 
-        {/* Nav */}
         <nav style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, padding: '0 12px', flex: 1 }}>
-
-          {/* Exam creation steps selector */}
           <ExamSelectorNavItem location={location} onNavigate={() => setSidebarOpen(false)} />
-
-          {/* Divider */}
           <div className="nav-divider" />
 
-          {/* Exam List + Statistics */}
           {otherNavItems.map(item => {
             const isActive = location.pathname.includes(item.path);
             return (
-              <Link
-                key={item.label}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: 10, padding: '11px 10px', borderRadius: 14,
-                  textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
-                  transition: 'all 0.2s',
-                  background: isActive ? '#fff' : 'transparent',
-                  color: isActive ? '#0B96D9' : '#fff',
-                  boxShadow: isActive ? '0 2px 10px rgba(5,59,118,0.12)' : 'none',
-                  borderBottom: isActive ? '3px solid #0a7dbf' : '3px solid transparent',
-                }}
-              >
+              <Link key={item.label} to={item.path} onClick={() => setSidebarOpen(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '11px 10px', borderRadius: 14, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0B96D9' : '#fff', boxShadow: isActive ? '0 2px 10px rgba(5,59,118,0.12)' : 'none', borderBottom: isActive ? '3px solid #0a7dbf' : '3px solid transparent' }}>
                 <span style={{ display: 'flex', flexShrink: 0 }}>{item.icon}</span>
                 <span className="nav-label" style={{ flex: 1, textAlign: 'center' }}>{item.label}</span>
               </Link>
             );
           })}
 
-          {/* ── Spacer: pushes logout to the bottom ── */}
           <div style={{ flex: 1 }} />
-
-          {/* Divider before logout */}
           <div className="nav-divider" />
 
-          {/* Logout button */}
-          <button
-            className="logout-btn"
-            onClick={handleLogout}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 10, padding: '11px 10px', borderRadius: 14,
-              border: 'none', fontFamily: 'inherit', cursor: 'pointer',
-              fontWeight: 700, fontSize: '0.88rem',
-              color: 'rgba(255,255,255,0.85)',
-              transition: 'all 0.25s ease',  // ← handles transform + color smoothly
-              marginBottom: 4,
-            }}
-          >
-            <span style={{ display: 'flex', flexShrink: 0 }}>
-              <LogOut size={18} />
-            </span>
+          <button className="logout-btn" onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '11px 10px', borderRadius: 14, border: 'none', fontFamily: 'inherit', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', transition: 'all 0.25s ease', marginBottom: 4 }}>
+            <span style={{ display: 'flex', flexShrink: 0 }}><LogOut size={18} /></span>
             <span className="nav-label" style={{ flex: 1, textAlign: 'center' }}>Log out</span>
           </button>
-
         </nav>
       </aside>
 
       {/* MAIN */}
       <main className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-
-        {/* Mobile top bar */}
         <div className="mobile-topbar">
           <div className="topbar-left">
             <button onClick={() => setSidebarOpen(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#053B76', display: 'flex', alignItems: 'center', padding: 6, borderRadius: 8 }}>
@@ -292,12 +218,9 @@ function DashboardInner() {
           <div className="topbar-mid">
             <img src={logo} alt="QuiZor" style={{ height: 38, objectFit: 'contain' }} />
           </div>
-          <div className="topbar-right">
-            <HeaderUser />
-          </div>
+          <div className="topbar-right"><HeaderUser /></div>
         </div>
 
-        {/* Desktop header */}
         <header className="desktop-header" style={{ height: 80, alignItems: 'center', justifyContent: 'flex-end', padding: '0 40px', flexShrink: 0 }}>
           <HeaderUser />
         </header>
