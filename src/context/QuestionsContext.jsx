@@ -12,7 +12,8 @@ function makeQuestion(overrides = {}) {
       { text: '' },
       { text: '' },
     ],
-    correct: null,
+    correct: [],
+    points: 1,
     ...overrides,
   };
 }
@@ -52,11 +53,17 @@ export function QuestionsProvider({ children }) {
     );
   }
 
+  // Toggle a choice as correct. Supports multiple correct answers per question.
   function setCorrect(id, index) {
     setQuestions(prev =>
-      prev.map(q =>
-        q.id === id ? { ...q, correct: q.correct === index ? null : index } : q
-      )
+      prev.map(q => {
+        if (q.id !== id) return q;
+        const current = Array.isArray(q.correct) ? q.correct : [];
+        const correct = current.includes(index)
+          ? current.filter(i => i !== index)
+          : [...current, index].sort((a, b) => a - b);
+        return { ...q, correct };
+      })
     );
   }
 
@@ -65,18 +72,29 @@ export function QuestionsProvider({ children }) {
       prev.map(q => {
         if (q.id !== id) return q;
         const newChoices = q.choices.filter((_, i) => i !== index);
-        return {
-          ...q,
-          choices: newChoices,
-          correct: q.correct === index ? null : q.correct > index ? q.correct - 1 : q.correct,
-        };
+        // Drop the removed choice from the correct set and shift higher indices down.
+        const current = Array.isArray(q.correct) ? q.correct : [];
+        const correct = current
+          .filter(i => i !== index)
+          .map(i => (i > index ? i - 1 : i));
+        return { ...q, choices: newChoices, correct };
       })
     );
   }
 
   // Load questions for editing
   function loadQuestions(qs) {
-    setQuestions(qs.map(q => ({ ...q, id: q.id ?? Date.now() + Math.random() })));
+    setQuestions(qs.map(q => ({
+      ...q,
+      id: q.id ?? Date.now() + Math.random(),
+      points: q.points ?? 1,
+      // Normalize `correct` to an array: legacy exams stored a single index or null.
+      correct: Array.isArray(q.correct)
+        ? q.correct
+        : q.correct == null
+          ? []
+          : [q.correct],
+    })));
   }
 
   // Reset to empty

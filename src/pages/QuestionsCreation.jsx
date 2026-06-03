@@ -121,6 +121,25 @@ function QuestionCard({ q, index, onDelete, onChange, onAddChoice, onChangeChoic
             fontSize: '0.95rem', outline: 'none', minWidth: 0,
           }}
         />
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+          border: '1.5px solid #ceedf8', borderRadius: 10, padding: '4px 8px',
+        }} title="Points for a correct answer">
+          <input
+            type="number" min={0} step={1}
+            value={q.points ?? 1}
+            onChange={e => {
+              const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+              onChange(q.id, 'points', v);
+            }}
+            style={{
+              width: 44, border: 'none', outline: 'none', textAlign: 'center',
+              color: '#053B76', fontWeight: 700, fontSize: '0.95rem',
+              MozAppearance: 'textfield',
+            }}
+          />
+          <span style={{ color: '#6B8DB2', fontSize: '0.78rem', fontWeight: 600 }}>pts</span>
+        </div>
         <button onClick={() => onDelete(q.id)} style={{
           width: 34, height: 34, borderRadius: '50%', background: '#fee2e2',
           color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex',
@@ -147,14 +166,15 @@ function QuestionCard({ q, index, onDelete, onChange, onAddChoice, onChangeChoic
                 outline: 'none', minWidth: 0,
               }}
             />
-            <button className="qc-correct-btn" onClick={() => onSetCorrect(q.id, ci)} style={{
+            <button className="qc-correct-btn" title="Mark as correct (you can select several)"
+              onClick={() => onSetCorrect(q.id, ci)} style={{
               width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-              border: q.correct === ci ? '2px solid #0B96D9' : '2px solid #ceedf8',
-              background: q.correct === ci ? '#0B96D9' : '#fff',
-              color: q.correct === ci ? '#fff' : '#ceedf8',
+              border: (q.correct || []).includes(ci) ? '2px solid #0B96D9' : '2px solid #ceedf8',
+              background: (q.correct || []).includes(ci) ? '#0B96D9' : '#fff',
+              color: (q.correct || []).includes(ci) ? '#fff' : '#ceedf8',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {q.correct === ci && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+              {(q.correct || []).includes(ci) && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
             </button>
             <button className="qc-del-choice" onClick={() => onDeleteChoice(q.id, ci)} style={{
               width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
