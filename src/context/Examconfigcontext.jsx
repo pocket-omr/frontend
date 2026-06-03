@@ -19,16 +19,18 @@ export function ExamConfigProvider({ children }) {
   const [form, setForm] = useState({ ...defaultForm });
   const [checkboxType, setCheckboxType] = useState('Fill');
   const [gridLayout, setGridLayout] = useState('Linear');
+  const [students, setStudents] = useState([]);
 
   function handleCheckboxType(type) {
     setCheckboxType(type);
   }
 
   // Load exam data for editing
-  function loadExamConfig(examForm, examCheckboxType, examGridLayout) {
+  function loadExamConfig(examForm, examCheckboxType, examGridLayout, examStudents) {
     setForm({ ...defaultForm, ...examForm });
     setCheckboxType(examCheckboxType || 'Fill');
     setGridLayout(examGridLayout || 'Linear');
+    setStudents(examStudents || []);
   }
 
   // Reset to blank
@@ -36,6 +38,7 @@ export function ExamConfigProvider({ children }) {
     setForm({ ...defaultForm });
     setCheckboxType('Fill');
     setGridLayout('Linear');
+    setStudents([]);
   }
 
   return (
@@ -43,6 +46,7 @@ export function ExamConfigProvider({ children }) {
       form, setForm,
       checkboxType, handleCheckboxType,
       gridLayout, setGridLayout,
+      students, setStudents,
       loadExamConfig, resetForm,
     }}>
       {children}

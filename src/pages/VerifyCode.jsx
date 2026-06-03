@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import backgroundImg from "../assets/Forgot passsword.png";
 import cadnaIcon from "../assets/cadna.png";
 
@@ -22,7 +22,11 @@ const BackButton = ({ onClick }) => (
 
 export default function VerifyCode() {
   const [code, setCode] = useState(["", "", "", ""]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || '';
 
   const handleInput = (e, index) => {
     const val = e.target.value;
@@ -44,10 +48,28 @@ export default function VerifyCode() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Verify code submitted:", code.join(""));
-    navigate("/reset-password");
+    const codeStr = code.join("");
+    if (codeStr.length < 4) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/auth/verify-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: codeStr }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Invalid code');
+      }
+      navigate("/reset-password", { state: { email, code: codeStr } });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -32,10 +32,29 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Forgot password submitted:", email);
-    navigate("/verify-code"); // Navigate to next step
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/auth/send-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Failed to send code');
+      }
+      navigate("/verify-code", { state: { email } });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

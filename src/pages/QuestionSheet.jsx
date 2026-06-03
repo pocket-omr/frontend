@@ -140,7 +140,7 @@ function LetterBoxes({ count }) {
   return (
     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} style={{ width: 22, height: 26, border: '1.5px solid #053B76', borderRadius: 2 }} />
+        <div key={i} style={{ width: 17, height: 17, border: '1.5px solid #053B76', borderRadius: 2 }} />
       ))}
     </div>
   );
@@ -153,23 +153,23 @@ function StudentInfo() {
         Write clearly in UPPERCASE letters, as it appears in your student ID.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>First Name</div>
-            <LetterBoxes count={20} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Group</div>
-            <LetterBoxes count={2} />
-          </div>
+        <div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>First Name</div>
+          <LetterBoxes count={20} />
         </div>
         <div>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Last Name</div>
           <LetterBoxes count={20} />
         </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Serial Code</div>
-          <LetterBoxes count={12} />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Registration Number</div>
+            <LetterBoxes count={12} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Group</div>
+            <LetterBoxes count={2} />
+          </div>
         </div>
       </div>
     </div>

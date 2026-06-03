@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useExamList } from '../context/ExamListContext';
 import { useExamConfig } from '../context/Examconfigcontext';
 import { useQuestions } from '../context/QuestionsContext';
 import {
-  ClipboardList, Trash2, Pencil, BookOpen, Calendar, Hash, Clock, Download, CheckCircle2, XCircle
+  ClipboardList, Trash2, Pencil, BookOpen, Calendar, Hash, Clock, Download, CheckCircle2, XCircle, Users, FileSpreadsheet
 } from 'lucide-react';
 import { useDownloadPDF } from '../hooks/useDownloadPDF';
+import { downloadResultsExcel } from '../api';
 
 const styles = `
   .el-title { font-size: 1.8rem; }
@@ -145,16 +146,22 @@ function formatDate(iso) {
 }
 
 export default function ExamList() {
-  const { exams, deleteExam, startEditExam, cancelEdit } = useExamList();
+  const { exams, deleteExam, startEditExam, cancelEdit, refresh, loading } = useExamList();
   const { loadExamConfig, resetForm } = useExamConfig();
   const { loadQuestions, resetQuestions } = useQuestions();
   const navigate = useNavigate();
   const [confirmId, setConfirmId] = useState(null);
   const [downloadExam, setDownloadExam] = useState(null);
 
+  // Always re-fetch from the backend when the list is opened, so newly created
+  // exams (incl. from other devices) show up without a full reload.
+  useEffect(() => {
+    refresh?.();
+  }, [refresh]);
+
   function handleEdit(exam) {
     startEditExam(exam.id);
-    loadExamConfig(exam.form, exam.checkboxType, exam.gridLayout);
+    loadExamConfig(exam.form, exam.checkboxType, exam.gridLayout, exam.students);
     loadQuestions(exam.questions || []);
     navigate('/dashboard/exam-config');
   }
@@ -194,7 +201,11 @@ export default function ExamList() {
           </button>
         </div>
 
-        {exams.length === 0 ? (
+        {loading && exams.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 0', color: '#6B8DB2' }}>
+            <p style={{ fontWeight: 600, fontSize: '1rem', margin: 0 }}>Loading exams…</p>
+          </div>
+        ) : exams.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 0', color: '#6B8DB2' }}>
             <BookOpen size={48} style={{ opacity: 0.25, marginBottom: 16 }} />
             <p style={{ fontWeight: 600, fontSize: '1rem', margin: 0 }}>No exams saved yet.</p>
@@ -219,11 +230,21 @@ export default function ExamList() {
                     {exam.form?.module   && <span className="el-badge"><BookOpen size={12} />{exam.form.module}</span>}
                     {exam.form?.duration && <span className="el-badge"><Clock size={12} />{exam.form.duration}</span>}
                     {exam.questions?.length > 0 && <span className="el-badge"><Hash size={12} />{exam.questions.length} questions</span>}
+                    {exam.students?.length > 0 && <span className="el-badge"><Users size={12} />{exam.students.length} students</span>}
                     {exam.savedAt && <span className="el-badge"><Calendar size={12} />{formatDate(exam.savedAt)}</span>}
                   </div>
                 </div>
                 <div className="el-actions" style={{ display: 'flex', gap: 8 }}>
-                  <button className="el-btn-download" onClick={() => setDownloadExam(exam)} title="Download"><Download size={16} /></button>
+                  <button className="el-btn-download" onClick={() => setDownloadExam(exam)} title="Download sheets (PDF)"><Download size={16} /></button>
+                  <button
+                    className="el-btn-edit"
+                    title="Download student grades (Excel)"
+                    onClick={() =>
+                      downloadResultsExcel(exam.id, exam.form?.title).catch(e =>
+                        alert('Could not export grades: ' + (e?.detail || e?.message || e))
+                      )
+                    }
+                  ><FileSpreadsheet size={14} /> Grades</button>
                   <button className="el-btn-edit" onClick={() => handleEdit(exam)}><Pencil size={14} /> Edit</button>
                   <button className="el-btn-delete" onClick={() => setConfirmId(exam.id)}><Trash2 size={14} /> Delete</button>
                 </div>

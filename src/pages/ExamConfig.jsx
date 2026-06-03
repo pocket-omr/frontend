@@ -3,7 +3,7 @@ import { useExamConfig } from '../context/Examconfigcontext';
 import { useQuestions } from '../context/QuestionsContext';
 import { useExamList } from '../context/ExamListContext';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, PenLine, Eye, LayoutGrid, CheckSquare, ArrowLeft, Pencil, Download } from 'lucide-react';
+import { ClipboardList, PenLine, Eye, LayoutGrid, CheckSquare, ArrowLeft, Pencil, Download, UserPlus, X, Users, Upload } from 'lucide-react';
 
 const responsiveStyles = `
   .ec-grid-2 { grid-template-columns: 1fr 1fr; }
@@ -134,12 +134,74 @@ function StepsNav({ currentIndex, navigate }) {
 }
 
 export default function ExamConfig() {
-  const { form, setForm, checkboxType, handleCheckboxType, gridLayout, setGridLayout, resetForm } = useExamConfig();
+  const { form, setForm, checkboxType, handleCheckboxType, gridLayout, setGridLayout, students, setStudents, resetForm } = useExamConfig();
   const { questions, changeQuestion, resetQuestions } = useQuestions();
   const { editingExam, cancelEdit } = useExamList();
   const navigate = useNavigate();
+  const emptyStudent = { firstName: '', lastName: '', group: '', registrationNumber: '' };
+  const [newStudent, setNewStudent] = React.useState(emptyStudent);
+  const [fileLoading, setFileLoading] = React.useState(false);
+  const fileInputRef = React.useRef(null);
+
+  // Normalize a student entry to the structured shape. Tolerates legacy exams
+  // where students were stored as plain "First Last" name strings.
+  const normalizeStudent = (s) => {
+    if (typeof s === 'string') {
+      const [firstName = '', ...rest] = s.trim().split(/\s+/);
+      return { firstName, lastName: rest.join(' '), group: '', registrationNumber: '' };
+    }
+    return { firstName: '', lastName: '', group: '', registrationNumber: '', ...s };
+  };
+
+  const addStudent = () => {
+    const s = {
+      firstName: newStudent.firstName.trim(),
+      lastName: newStudent.lastName.trim(),
+      group: newStudent.group.trim(),
+      registrationNumber: newStudent.registrationNumber.trim(),
+    };
+    if (!s.firstName && !s.lastName) return; // require at least a name
+    setStudents(prev => [...prev, s]);
+    setNewStudent(emptyStudent);
+  };
 
   const isEditing = Boolean(editingExam);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      alert('Unsupported file type. Please upload .xlsx, .xls, or .csv');
+      return;
+    }
+    setFileLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('http://localhost:8000/api/v1/students/parse-file', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Failed to parse file');
+      }
+      const data = await res.json();
+      const imported = data.students.map(s => ({
+        firstName: s.first_name || '',
+        lastName: s.last_name || '',
+        group: s.group || '',
+        registrationNumber: s.registration_number || '',
+      }));
+      setStudents(prev => [...prev, ...imported]);
+    } catch (err) {
+      alert(err.message || 'Failed to upload file');
+    } finally {
+      setFileLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -154,7 +216,10 @@ export default function ExamConfig() {
         changeQuestion(q.id, 'choices', [...q.choices, ...Array.from({ length: newCount - current }, () => ({ text: '' }))]);
       } else if (current > newCount) {
         changeQuestion(q.id, 'choices', q.choices.slice(0, newCount));
-        if (q.correct !== null && q.correct >= newCount) changeQuestion(q.id, 'correct', null);
+        // Drop any correct answers that point at removed choices.
+        const correct = (Array.isArray(q.correct) ? q.correct : q.correct == null ? [] : [q.correct])
+          .filter(i => i < newCount);
+        changeQuestion(q.id, 'correct', correct);
       }
     });
   };
@@ -271,6 +336,134 @@ export default function ExamConfig() {
             <h3 className="ec-title" style={{ color: '#053B76', fontWeight: 700, fontSize: '1.2rem', marginBottom: 16 }}>Candidate Instructions</h3>
             <div className="ec-section" style={{ border: '2px solid #ceedf8', borderRadius: 24, padding: 24, minHeight: 100, display: 'flex', alignItems: 'center' }}>
               <textarea name="instructions" value={form.instructions} onChange={handleChange} rows={2} placeholder="Enter any instructions for candidates..." className="ec-textarea" />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="ec-title" style={{ color: '#053B76', fontWeight: 700, fontSize: '1.2rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Users size={20} /> Student List
+              {students.length > 0 && (
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B8DB2' }}>
+                  ({students.length} student{students.length !== 1 ? 's' : ''})
+                </span>
+              )}
+            </h3>
+            <div className="ec-section" style={{ border: '2px solid #ceedf8', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(140px, 1fr))', gap: 10, flex: 1, minWidth: 280 }}>
+                  <input
+                    value={newStudent.firstName}
+                    onChange={e => setNewStudent(s => ({ ...s, firstName: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addStudent(); } }}
+                    className="ec-input"
+                    placeholder="First name"
+                  />
+                  <input
+                    value={newStudent.lastName}
+                    onChange={e => setNewStudent(s => ({ ...s, lastName: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addStudent(); } }}
+                    className="ec-input"
+                    placeholder="Last name"
+                  />
+                  <input
+                    value={newStudent.group}
+                    onChange={e => setNewStudent(s => ({ ...s, group: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addStudent(); } }}
+                    className="ec-input"
+                    placeholder="Group (optional)"
+                  />
+                  <input
+                    value={newStudent.registrationNumber}
+                    onChange={e => setNewStudent(s => ({ ...s, registrationNumber: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addStudent(); } }}
+                    className="ec-input"
+                    placeholder="Registration № (optional)"
+                  />
+                </div>
+                <button
+                  onClick={addStudent}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 46,
+                    borderRadius: 10, border: 'none', fontWeight: 700, cursor: 'pointer',
+                    background: '#0B96D9', color: '#fff', fontSize: '0.88rem', flexShrink: 0,
+                  }}
+                >
+                  <UserPlus size={16} /> Add
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={fileLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '0 16px',
+                    borderRadius: 10, border: '2px solid #0B96D9', fontWeight: 700,
+                    cursor: fileLoading ? 'not-allowed' : 'pointer',
+                    background: '#fff', color: '#0B96D9', fontSize: '0.88rem', flexShrink: 0,
+                    height: 46, opacity: fileLoading ? 0.6 : 1,
+                  }}
+                >
+                  <Upload size={16} /> {fileLoading ? 'Importing...' : 'Import Excel'}
+                </button>
+              </div>
+              <p style={{ color: '#8aa6c4', fontWeight: 500, fontSize: '0.78rem', margin: '-6px 0 0' }}>
+                Imported file columns: first name, last name, group, registration number.
+              </p>
+
+              {students.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {students.map((raw, idx) => {
+                    const s = normalizeStudent(raw);
+                    const fullName = `${s.firstName} ${s.lastName}`.trim() || '—';
+                    return (
+                    <div key={idx} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      background: '#f4faff', borderRadius: 12, padding: '10px 14px',
+                      border: '1.5px solid #ceedf8',
+                    }}>
+                      <span style={{
+                        width: 28, height: 28, borderRadius: 8, background: '#0B96D9', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '0.75rem', flexShrink: 0,
+                      }}>
+                        {idx + 1}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: '#053B76', fontWeight: 600, fontSize: '0.9rem' }}>{fullName}</div>
+                        {(s.group || s.registrationNumber) && (
+                          <div style={{ color: '#6B8DB2', fontWeight: 500, fontSize: '0.78rem', marginTop: 2, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                            {s.group && <span>Group: {s.group}</span>}
+                            {s.registrationNumber && <span>Reg №: {s.registrationNumber}</span>}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setStudents(prev => prev.filter((_, i) => i !== idx))}
+                        style={{
+                          width: 28, height: 28, borderRadius: 8, border: '1.5px solid #ffd0d0',
+                          background: '#fff', color: '#e05252', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}
+                        title="Remove student"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {students.length === 0 && (
+                <p style={{ color: '#b0c8e0', fontWeight: 500, fontSize: '0.88rem', textAlign: 'center', margin: '8px 0 0' }}>
+                  No students added yet. Add student names who will take this exam.
+                </p>
+              )}
             </div>
           </div>
         </div>

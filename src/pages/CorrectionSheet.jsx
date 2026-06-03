@@ -5,8 +5,18 @@ import { useExamList } from '../context/ExamListContext';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, PenLine, Eye, LayoutGrid, CheckSquare, ArrowLeft, Download, CheckCircle2, XCircle } from 'lucide-react';
 import { useDownloadPDF } from '../hooks/useDownloadPDF';
+import { QRCodeSVG } from 'qrcode.react';
 
 function getLabel(i) { return String.fromCharCode(65 + i); }
+// Correct answers are an array of choice indices (multiple-choice supported).
+function correctList(q) {
+  return Array.isArray(q.correct) ? q.correct : q.correct == null ? [] : [q.correct];
+}
+function isCorrect(q, li) { return correctList(q).includes(li); }
+function correctLabels(q) {
+  const ls = correctList(q).filter(i => i < q.choices.length).sort((a, b) => a - b);
+  return ls.length ? ls.map(getLabel).join(', ') : '—';
+}
 const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const responsiveStyles = `
@@ -115,37 +125,48 @@ function LetterBoxes({ count }) {
   return (
     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} style={{ width: 22, height: 26, border: '1.5px solid #053B76', borderRadius: 2 }} />
+        <div key={i} style={{ width: 17, height: 17, border: '1.5px solid #053B76', borderRadius: 2 }} />
       ))}
     </div>
   );
 }
 
 function StudentInfo() {
+  const marker = { width: 10, height: 10, background: '#000', flexShrink: 0 };
   return (
     <div style={{ border: '1.5px solid #ceedf8', borderRadius: 14, padding: '14px 18px', marginBottom: 20, color: '#053B76', fontSize: '0.82rem' }}>
+      {/* Top markers */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, marginLeft: -36, marginRight: -36 }}>
+        <div style={marker} />
+        <div style={marker} />
+      </div>
       <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: '#444', borderBottom: '1px solid #ceedf8', paddingBottom: 8 }}>
         Write clearly in UPPERCASE letters, as it appears in your student ID.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>First Name</div>
+          <LetterBoxes count={20} />
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Last Name</div>
+          <LetterBoxes count={20} />
+        </div>
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>First Name</div>
-            <LetterBoxes count={20} />
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Registration Number</div>
+            <LetterBoxes count={12} />
           </div>
           <div>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Group</div>
             <LetterBoxes count={2} />
           </div>
         </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Last Name</div>
-          <LetterBoxes count={20} />
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Serial Code</div>
-          <LetterBoxes count={12} />
-        </div>
+      </div>
+      {/* Bottom markers */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, marginLeft: -36, marginRight: -36 }}>
+        <div style={marker} />
+        <div style={marker} />
       </div>
     </div>
   );
@@ -189,99 +210,114 @@ function QuestionSheetContent({ questions, form, questionsPerPage }) {
   );
 }
 
-/* ── Grid Sheet ────────────────────────────────────────────────── */
-function GridSheetContent({ questions, form, questionsPerPage, checkboxType, gridLayout }) {
+/* ── Grid Sheet (Template Design) ─────────────────────────────── */
+function AlignmentMarker({ top, left, right, bottom }) {
+  const style = { position: 'absolute', width: 10, height: 10, background: '#000' };
+  if (top !== undefined) style.top = top;
+  if (left !== undefined) style.left = left;
+  if (right !== undefined) style.right = right;
+  if (bottom !== undefined) style.bottom = bottom;
+  return <div style={style} />;
+}
+
+function GridSheetContent({ questions, form, questionsPerPage, checkboxType }) {
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
   const pages = Array.from({ length: totalPages }, (_, i) =>
     questions.slice(i * questionsPerPage, (i + 1) * questionsPerPage)
   );
   const maxChoices = questions.length > 0 ? Math.max(...questions.map(q => q.choices.length)) : 4;
-  const colLabels  = Array.from({ length: maxChoices }, (_, i) => getLabel(i));
-  const isDouble   = gridLayout === 'Double Column';
+  const isBubble = checkboxType === 'Bubbel';
 
-  function HowToFill() {
-    const isBubble = checkboxType === 'Bubbel';
+  function BubbleGrid({ pageQs, startIndex }) {
+    const colCount = 3;
+    const rowsPerCol = Math.ceil(pageQs.length / colCount);
+    const columns = [];
+    for (let c = 0; c < colCount; c++) {
+      columns.push(pageQs.slice(c * rowsPerCol, (c + 1) * rowsPerCol));
+    }
+
+    const marker = { width: 10, height: 10, background: '#000', flexShrink: 0 };
+
     return (
-      <div style={{ marginTop: 20, border: '1.5px solid #ceedf8', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ background: '#4a4a4a', color: '#fff', fontWeight: 700, fontSize: '0.78rem', padding: '6px 14px', letterSpacing: 1 }}>
-          HOW TO FILL
+      <div>
+        {/* Top markers — before first question row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={marker} />
+          <div style={marker} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '10px 16px', background: '#fff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  {isBubble
-                    ? <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #888', position: 'relative' }}>
-                        <div style={{ position: 'absolute', top: 3, left: 3, width: 10, height: 10, borderRadius: '50%', background: '#bbb' }} />
-                      </div>
-                    : <div style={{ width: 22, height: 22, borderRadius: 3, border: '2px solid #888', background: '#ddd' }} />
-                  }
-                  <span style={{ fontSize: '0.6rem', color: '#888' }}>Partial</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  {isBubble
-                    ? <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid #888', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 14, color: '#888', lineHeight: 1 }}>✕</span>
-                      </div>
-                    : <div style={{ width: 22, height: 22, borderRadius: 3, border: '2px solid #888', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 14, color: '#888', lineHeight: 1 }}>✕</span>
-                      </div>
-                  }
-                  <span style={{ fontSize: '0.6rem', color: '#888' }}>Cross Overflow</span>
-                </div>
-              </div>
-              <span style={{ fontSize: '0.65rem', color: '#c00', fontWeight: 700 }}>WRONG</span>
-            </div>
-            <span style={{ fontSize: '1.2rem', color: '#444', margin: '0 4px' }}>→</span>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              {isBubble
-                ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#222' }} />
-                : <div style={{ width: 22, height: 22, borderRadius: 3, border: '2px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#222', lineHeight: 1, fontWeight: 700 }}>✕</span>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          {columns.map((colQs, ci) => (
+            <div key={ci} style={{ flex: 1 }}>
+              {colQs.map((q, ri) => {
+                const qNum = startIndex + ci * rowsPerCol + ri + 1;
+                return (
+                  <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ width: 24, fontSize: '0.8rem', fontWeight: 600, color: '#333', textAlign: 'right' }}>{qNum}</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {Array.from({ length: maxChoices }).map((_, bi) => (
+                        <div key={bi} style={{
+                          width: 19, height: 19,
+                          borderRadius: '50%',
+                          border: '1.5px solid #555',
+                          background: 'transparent',
+                        }} />
+                      ))}
+                    </div>
                   </div>
-              }
-              <span style={{ fontSize: '0.65rem', color: '#222', fontWeight: 700 }}>CORRECT</span>
+                );
+              })}
             </div>
-          </div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {['Use black pen only', isBubble ? 'Fill the circle completely' : 'Fill the square completely', 'Do not cross the boundary', 'One answer per question'].map(rule => (
-              <li key={rule} style={{ fontSize: '0.75rem', color: '#333', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: '#0B96D9', fontWeight: 700 }}>•</span> {rule}
-              </li>
-            ))}
-          </ul>
+          ))}
+        </div>
+
+        {/* Bottom markers — after last question row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+          <div style={marker} />
+          <div style={marker} />
         </div>
       </div>
     );
   }
 
-  function GridTable({ qs, startIndex }) {
+  function HowToFillPrint() {
     return (
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', color: '#053B76', fontSize: '0.85rem' }}>
-          <thead>
-            <tr style={{ background: '#0B96D9', color: '#fff' }}>
-              <th style={{ padding: '8px 16px', textAlign: 'left', fontWeight: 700 }}>Q</th>
-              {colLabels.map(l => <th key={l} style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{l}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {qs.map((q, i) => (
-              <tr key={q.id} style={{ background: i % 2 === 0 ? '#fff' : '#f4faff' }}>
-                <td style={{ padding: '8px 16px', fontWeight: 700 }}>Q{startIndex + i + 1}</td>
-                {colLabels.map((l, li) => (
-                  <td key={l} style={{ padding: '6px 8px', textAlign: 'center' }}>
-                    {li < q.choices.length
-                      ? <div style={{ width: 28, height: 28, borderRadius: checkboxType === 'Bubbel' ? '50%' : 4, border: '2px solid #ceedf8', margin: '0 auto' }} />
-                      : <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f0f0f0', margin: '0 auto' }} />
-                    }
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ border: '1px solid #ccc', borderRadius: 4, overflow: 'hidden', maxWidth: 360 }}>
+          <div style={{ background: '#4a4a4a', color: '#fff', fontWeight: 700, fontSize: '0.68rem', padding: '4px 10px', letterSpacing: 1 }}>
+            HOW TO FILL
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '8px 12px', fontSize: '0.7rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: '0.6rem', color: '#888' }}>WRONG</span>
+                <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid #888', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 3, left: 3, width: 8, height: 8, borderRadius: '50%', background: '#bbb' }} />
+                  </div>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid #888', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 10, color: '#888' }}>✕</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 4, fontSize: '0.5rem', color: '#888', marginTop: 1 }}>
+                  <span>Partial</span><span>Cross Overflow</span>
+                </div>
+              </div>
+              <span style={{ color: '#666' }}>→</span>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: '0.6rem', color: '#333', fontWeight: 700 }}>CORRECT</span>
+                <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#333', margin: '2px auto 0' }} />
+                <span style={{ fontSize: '0.5rem', color: '#333' }}>Filled</span>
+              </div>
+            </div>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', fontSize: '0.65rem', color: '#444' }}>
+              <li>• Use black pen only</li>
+              <li>• Fill the circle completely</li>
+              <li>• Do not cross the boundary</li>
+              <li>• One answer per question</li>
+            </ul>
+          </div>
+        </div>
       </div>
     );
   }
@@ -290,25 +326,50 @@ function GridSheetContent({ questions, form, questionsPerPage, checkboxType, gri
     <>
       {pages.map((pageQs, pi) => {
         const startIndex = pi * questionsPerPage;
-        const half = Math.ceil(pageQs.length / 2);
         return (
-          <div key={`gs-${pi}`} className="print-sheet">
-            <ExamHeader form={form} page={pi + 1} totalPages={totalPages} />
-            <StudentInfo />
-            {form.instructions?.trim() && (
-              <div style={{ border: '1px solid #ceedf8', borderRadius: 8, padding: '8px 12px', marginBottom: 12, background: '#f4faff', color: '#053B76', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.5 }}>
-                <span style={{ fontWeight: 700, marginRight: 4 }}>Instructions:</span>{form.instructions.trim()}
+          <div key={`gs-${pi}`} className="print-sheet" style={{ position: 'relative', padding: 16, boxSizing: 'border-box' }}>
+            <div style={{ padding: '0 20px' }}>
+              {/* Title */}
+              <div style={{ textAlign: 'center', marginBottom: 6 }}>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#333' }}>
+                  {form.title || 'Exam'}
+                </div>
+                {form.duration && (
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Duration: {form.duration}</div>
+                )}
               </div>
-            )}
-            {isDouble ? (
-              <div style={{ display: 'flex', gap: 16 }}>
-                <div style={{ flex: 1 }}><GridTable qs={pageQs.slice(0, half)} startIndex={startIndex} /></div>
-                <div style={{ flex: 1 }}><GridTable qs={pageQs.slice(half)} startIndex={startIndex + half} /></div>
+
+              {/* Separator */}
+              <hr style={{ border: 'none', borderTop: '1px solid #ccc', margin: '10px 0' }} />
+
+              {/* Student info */}
+              <StudentInfo />
+
+              {/* Separator */}
+              <hr style={{ border: 'none', borderTop: '1px solid #ccc', margin: '10px 0' }} />
+
+              {/* Instruction */}
+              <p style={{ fontSize: '0.8rem', color: '#333', marginBottom: 12 }}>
+                Fill the circles completely using a black pen.
+              </p>
+
+              {/* Bubble grid — this sits between the middle markers */}
+              <BubbleGrid pageQs={pageQs} startIndex={startIndex} />
+
+              {/* How to fill + QR code at bottom */}
+              <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <HowToFillPrint />
+                <QRCodeSVG
+                  value={JSON.stringify({
+                    title: form.title,
+                    module: form.module,
+                    questions: questions.length,
+                    choices: maxChoices,
+                  })}
+                  size={80}
+                />
               </div>
-            ) : (
-              <GridTable qs={pageQs} startIndex={startIndex} />
-            )}
-            <HowToFill />
+            </div>
           </div>
         );
       })}
@@ -353,15 +414,15 @@ function CorrectionSheetContent({ questions, form, questionsPerPage }) {
                       {colLabels.map((l, li) => (
                         <td key={l} style={{ padding: '4px 6px', textAlign: 'center' }}>
                           {li < q.choices.length
-                            ? <div style={{ width: 22, height: 22, borderRadius: 5, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: q.correct === li ? '#0FE2A6' : 'transparent', border: q.correct === li ? '2px solid #0FE2A6' : '1.5px solid #ceedf8', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                                {q.correct === li && <span style={{ fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1 }}>✓</span>}
+                            ? <div style={{ width: 22, height: 22, borderRadius: 5, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isCorrect(q, li) ? '#0FE2A6' : 'transparent', border: isCorrect(q, li) ? '2px solid #0FE2A6' : '1.5px solid #ceedf8', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                                {isCorrect(q, li) && <span style={{ fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1 }}>✓</span>}
                               </div>
                             : <div style={{ width: 22, height: 22, borderRadius: 5, background: '#f0f0f0', margin: '0 auto', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }} />
                           }
                         </td>
                       ))}
                       <td style={{ padding: '5px 12px', textAlign: 'center', fontWeight: 700 }}>
-                        {q.correct !== null && q.correct < q.choices.length ? getLabel(q.correct) : '—'}
+                        {correctLabels(q)}
                       </td>
                     </tr>
                   );
@@ -463,11 +524,12 @@ function DownloadModal({ onClose, form, questions, checkboxType, gridLayout }) {
 /* ── Main ──────────────────────────────────────────────────────── */
 export default function CorrectionSheet() {
   const { questions } = useQuestions();
-  const { form, resetForm, checkboxType, gridLayout } = useExamConfig();
+  const { form, resetForm, checkboxType, gridLayout, students } = useExamConfig();
   const { saveExam } = useExamList();
   const { resetQuestions } = useQuestions();
   const navigate = useNavigate();
   const [toast, setToast] = React.useState(false);
+  const [toastMsg, setToastMsg] = React.useState('Exam saved! Redirecting to exam list…');
   const [showDownload, setShowDownload] = React.useState(false);
 
   const questionsPerPage = parseInt(form.questionsPerPage) || 20;
@@ -495,11 +557,28 @@ export default function CorrectionSheet() {
     window.print();
   }
 
-  function handleSave() {
-    saveExam(form, questions, checkboxType, gridLayout);
+  const [saving, setSaving] = React.useState(false);
+
+  async function handleSave() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      // Persist to the backend (the only store — nothing is kept locally).
+      await saveExam(form, questions, checkboxType, gridLayout, students);
+    } catch (err) {
+      console.error('Could not save exam:', err);
+      setSaving(false);
+      // Keep the form intact so the user can retry without losing their work.
+      setToastMsg('Could not save exam. Check your connection/login and try again.');
+      setToast(true);
+      setTimeout(() => setToast(false), 2800);
+      return;
+    }
+    setToastMsg('Exam saved! Redirecting to exam list…');
     setToast(true);
     setTimeout(() => {
       setToast(false);
+      setSaving(false);
       resetForm();
       resetQuestions();
       navigate('/dashboard/exam-list');
@@ -580,13 +659,13 @@ export default function CorrectionSheet() {
                               {colLabels.map((l, li) => (
                                 <td key={l} style={{ padding: '6px 8px', textAlign: 'center' }}>
                                   {li < q.choices.length
-                                    ? <div style={{ width: 28, height: 28, borderRadius: 6, margin: '0 auto', background: q.correct === li ? '#0FE2A6' : 'transparent', border: q.correct === li ? '2px solid #0FE2A6' : '2px solid #ceedf8' }} />
-                                    : <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f0f0f0', margin: '0 auto' }} />
+                                    ? <div style={{ width: 28, height: 28, borderRadius: '50%', margin: '0 auto', background: isCorrect(q, li) ? '#0FE2A6' : 'transparent', border: isCorrect(q, li) ? '2px solid #0FE2A6' : '2px solid #ceedf8' }} />
+                                    : <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f0f0f0', margin: '0 auto' }} />
                                   }
                                 </td>
                               ))}
                               <td style={{ padding: '8px 16px', textAlign: 'center', fontWeight: 700 }}>
-                                {q.correct !== null && q.correct < q.choices.length ? getLabel(q.correct) : '—'}
+                                {correctLabels(q)}
                               </td>
                             </tr>
                           );
@@ -612,7 +691,7 @@ export default function CorrectionSheet() {
         <DownloadModal onClose={() => setShowDownload(false)} form={form} questions={questions} checkboxType={checkboxType} gridLayout={gridLayout} />
       )}
 
-      {toast && <div className="cs-toast">Exam saved! Redirecting to exam list…</div>}
+      {toast && <div className="cs-toast">{toastMsg}</div>}
     </>
   );
 }

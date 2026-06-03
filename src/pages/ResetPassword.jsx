@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import backgroundImg from "../assets/Forgot passsword.png";
 import cadnaIcon from "../assets/cadna.png";
 
@@ -22,14 +22,40 @@ const BackButton = ({ onClick }) => (
 
 export default function ResetPassword() {
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || '';
+  const code = location.state?.code || '';
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Reset password submitted:", form);
-    navigate("/signin"); // Finished
+    if (form.newPassword !== form.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, new_password: form.newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Failed to reset password');
+      }
+      alert('Password reset successfully!');
+      navigate("/signin");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
